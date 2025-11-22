@@ -1,7 +1,6 @@
 import streamlit as st
 from agents import agent
 from db import init_db, seed_data
-import os
 from dotenv import load_dotenv
 
 
