@@ -293,7 +293,6 @@ torch.mps.empty_cache()
 
 torch.set_default_device("cpu")
 
-from transformers import pipeline
 
 hf_pipeline = pipeline(
     "text2text-generation",
