@@ -1,3 +1,98 @@
+import asyncio
+import torch
+
+from transformers import pipeline
+from langchain_community.llms import HuggingFacePipeline
+from langchain.memory import ConversationBufferMemory, ConversationSummaryBufferMemory
+from langchain.agents import initialize_agent, AgentType
+from langchain_core.tools import Tool
+
+asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
+
+torch.mps.empty_cache()
+
+torch.set_default_device("cpu")
+
+
+hf_pipeline = pipeline(
+    "text2text-generation",
+    model="google/flan-t5-base",
+    device=-1,   # ✅ explicitly force CPU
+    max_length=256,       # ↓ shorten output
+    truncation=True,      # ✅ discard overflow tokens safely
+    temperature=0.2
+)
+
+# memory = ConversationSummaryBufferMemory(
+#     llm=None,
+#     max_token_limit=200   # summarize automatically when long
+# )
+
+
+# === Step 1: LLM ===
+# hf_pipeline = pipeline(
+#     "text2text-generation",
+#     model="google/flan-t5-base",
+#     max_length=512,
+#     temperature=0.2
+# )
+llm = HuggingFacePipeline(pipeline=hf_pipeline)
+
+# === Step 2: Tools ===
+def search_doctor(q: str):
+    return f"Found a doctor for query: {q}"
+
+def book_doctor(q: str):
+    return f"Doctor booked successfully for: {q}"
+
+
+tools = [
+    Tool(
+        name="search_doctor",
+        func=search_doctor,
+        description="Search for doctors by specialization or name"
+    ),
+    Tool(
+        name="book_doctor",
+        func=book_doctor,
+        description="Book a doctor appointment"
+    ),
+]
+
+# === Step 3: Memory ===
+memory = ConversationSummaryBufferMemory(
+    llm=llm,
+    max_token_limit=200   # summarize automatically when long
+)
+
+memory = ConversationBufferMemory(memory_key="chat_history")
+
+if len(memory.buffer.split()) > 400:
+    memory.clear()
+
+
+# === Step 4: Create the Agent ===
+agent = initialize_agent(
+    tools=tools,
+    llm=llm,
+    agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    memory=memory,
+    verbose=True,
+    handle_parsing_errors=True,
+)
+
+# === Step 5: Run ===
+# query = "Book me a cardiologist for tomorrow at 10 AM"
+query = "Task: Schedule a doctor appointment.\nDetails: I need a cardiologist for tomorrow at 10 AM."
+
+response = agent.invoke({"input": query})
+print("💬 Response:", response["output"])
+
+
+
+
+
 # # from langchain.agents import Tool, initialize_agent
 # # from langchain.llms import OpenAI  # or HuggingFacePipeline
 # # from langchain.llms import HuggingFacePipeline
@@ -276,94 +371,3 @@
 
 
 
-import asyncio
-asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-
-from transformers import pipeline
-from langchain_community.llms import HuggingFacePipeline
-from langchain.memory import ConversationBufferMemory
-from langchain.memory import ConversationSummaryBufferMemory
-
-from langchain.agents import initialize_agent, AgentType
-from langchain_core.tools import Tool
-
-
-import torch
-torch.mps.empty_cache()
-
-torch.set_default_device("cpu")
-
-
-hf_pipeline = pipeline(
-    "text2text-generation",
-    model="google/flan-t5-base",
-    device=-1,   # ✅ explicitly force CPU
-    max_length=256,       # ↓ shorten output
-    truncation=True,      # ✅ discard overflow tokens safely
-    temperature=0.2
-)
-
-# memory = ConversationSummaryBufferMemory(
-#     llm=None,
-#     max_token_limit=200   # summarize automatically when long
-# )
-
-
-# === Step 1: LLM ===
-# hf_pipeline = pipeline(
-#     "text2text-generation",
-#     model="google/flan-t5-base",
-#     max_length=512,
-#     temperature=0.2
-# )
-llm = HuggingFacePipeline(pipeline=hf_pipeline)
-
-# === Step 2: Tools ===
-def search_doctor(q: str):
-    return f"Found a doctor for query: {q}"
-
-def book_doctor(q: str):
-    return f"Doctor booked successfully for: {q}"
-
-
-tools = [
-    Tool(
-        name="search_doctor",
-        func=search_doctor,
-        description="Search for doctors by specialization or name"
-    ),
-    Tool(
-        name="book_doctor",
-        func=book_doctor,
-        description="Book a doctor appointment"
-    ),
-]
-
-# === Step 3: Memory ===
-memory = ConversationSummaryBufferMemory(
-    llm=llm,
-    max_token_limit=200   # summarize automatically when long
-)
-
-memory = ConversationBufferMemory(memory_key="chat_history")
-
-if len(memory.buffer.split()) > 400:
-    memory.clear()
-
-
-# === Step 4: Create the Agent ===
-agent = initialize_agent(
-    tools=tools,
-    llm=llm,
-    agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    memory=memory,
-    verbose=True,
-    handle_parsing_errors=True,
-)
-
-# === Step 5: Run ===
-# query = "Book me a cardiologist for tomorrow at 10 AM"
-query = "Task: Schedule a doctor appointment.\nDetails: I need a cardiologist for tomorrow at 10 AM."
-
-response = agent.invoke({"input": query})
-print("💬 Response:", response["output"])
