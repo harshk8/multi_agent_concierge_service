@@ -1,0 +1,45 @@
+name: Python Automated Code Review
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black pylint mypy reviewdog
+
+      # ---------------- LINTING ----------------
+      - name: 🧹 Flake8 - Code Style
+        run: flake8 . --max-line-length=120 --statistics || true
+
+      # ---------------- FORMAT CHECK ----------------
+      - name: 🎨 Black - Formatting Check
+        run: black . --check || true
+
+      # ---------------- TYPE CHECKING ----------------
+      - name: 🧠 MyPy - Static Type Check
+        run: mypy . || true
+
+      # ---------------- REVIEW COMMENTS ----------------
+      - name: 🔍 Pylint Review + PR Comments
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pylint $(git ls-files '*.py') \
+          | reviewdog -f=pylint -reporter=github-pr-review -level=warning
