@@ -18,10 +18,10 @@ torch.set_default_device("cpu")
 hf_pipeline = pipeline(
     "text2text-generation",
     model="google/flan-t5-base",
-    device=-1,   # ✅ explicitly force CPU
-    max_length=256,       # ↓ shorten output
-    truncation=True,      # ✅ discard overflow tokens safely
-    temperature=0.2
+    device=-1,  # ✅ explicitly force CPU
+    max_length=256,  # ↓ shorten output
+    truncation=True,  # ✅ discard overflow tokens safely
+    temperature=0.2,
 )
 
 # memory = ConversationSummaryBufferMemory(
@@ -39,9 +39,11 @@ hf_pipeline = pipeline(
 # )
 llm = HuggingFacePipeline(pipeline=hf_pipeline)
 
+
 # === Step 2: Tools ===
 def search_doctor(q: str):
     return f"Found a doctor for query: {q}"
+
 
 def book_doctor(q: str):
     return f"Doctor booked successfully for: {q}"
@@ -51,19 +53,14 @@ tools = [
     Tool(
         name="search_doctor",
         func=search_doctor,
-        description="Search for doctors by specialization or name"
+        description="Search for doctors by specialization or name",
     ),
-    Tool(
-        name="book_doctor",
-        func=book_doctor,
-        description="Book a doctor appointment"
-    ),
+    Tool(name="book_doctor", func=book_doctor, description="Book a doctor appointment"),
 ]
 
 # === Step 3: Memory ===
 memory = ConversationSummaryBufferMemory(
-    llm=llm,
-    max_token_limit=200   # summarize automatically when long
+    llm=llm, max_token_limit=200  # summarize automatically when long
 )
 
 memory = ConversationBufferMemory(memory_key="chat_history")
@@ -88,9 +85,6 @@ query = "Task: Schedule a doctor appointment.\nDetails: I need a cardiologist fo
 
 response = agent.invoke({"input": query})
 print("💬 Response:", response["output"])
-
-
-
 
 
 # # from langchain.agents import Tool, initialize_agent
@@ -129,7 +123,6 @@ print("💬 Response:", response["output"])
 #     Tool(name="search_flights", func=lambda q: "Flight 101 at 2025-11-12T09:00 (mock)", description="Search flights"),
 #     Tool(name="book_flight", func=lambda args: "Flight booked (mock)", description="Book a flight; args: flight_id,user_name")
 # ]
-
 
 
 # from transformers import pipeline
@@ -173,14 +166,6 @@ print("💬 Response:", response["output"])
 # # )
 
 # #agent = initialize_agent(tools, llm, agent_type="zero-shot-react-description", memory=memory, verbose=False)
-
-
-
-
-
-
-
-
 
 
 # import asyncio
@@ -232,15 +217,6 @@ print("💬 Response:", response["output"])
 # query = "Book me a cardiologist tomorrow morning"
 # response = executor.invoke({"input": query})
 # print(response["output"])
-
-
-
-
-
-
-
-
-
 
 
 # import asyncio
@@ -299,10 +275,6 @@ print("💬 Response:", response["output"])
 # print(result)
 
 
-
-
-
-
 # import asyncio
 # asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
@@ -352,22 +324,3 @@ print("💬 Response:", response["output"])
 # app = graph.compile()
 # response = app.invoke({"input": "Book me a cardiologist tomorrow at 10 AM"})
 # print(response)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
