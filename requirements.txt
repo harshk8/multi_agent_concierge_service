@@ -1,0 +1,6 @@
+langchain
+transformers
+torch                # if using local HF model, optional
+streamlit
+sqlite-utils
+pydantic
