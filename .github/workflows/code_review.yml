@@ -1,17 +1,15 @@
-name: Python Automated Code Review
+name: Python Code Review
 
 on:
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [ main, develop ]
 
 jobs:
   code-review:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
       - name: 🐍 Setup Python
@@ -19,26 +17,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: 📦 Install Python Tools
+      - name: 📦 Install tools
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black pylint mypy
+          pip install ruff black mypy
 
-      - name: 🔧 Setup Reviewdog
-        uses: reviewdog/action-setup@v1
+      # ✅ Lint + Code Smell Review (Replaces flake8 & pylint)
+      - name: 🔍 Ruff Lint
+        run: ruff check .
 
-      - name: 🧹 Flake8
-        run: flake8 . --max-line-length=120 || true
+      # ✅ Formatting check
+      - name: 🎨 Black Format Check
+        run: black . --check
 
-      - name: 🎨 Black
-        run: black . --check || true
-
-      - name: 🧠 MyPy
-        run: mypy . || true
-
-      - name: 🔍 Pylint with PR Comments
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pylint $(git ls-files '*.py') \
-          | reviewdog -f=pylint -reporter=github-pr-review -level=warning
+      # ✅ Type safety
+      - name: 🧠 MyPy Type Check
+        run: mypy .
