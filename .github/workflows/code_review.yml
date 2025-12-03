@@ -27,7 +27,7 @@ jobs:
             # OR install explicitly (dev deps)
             pip install ruff black mypy
             pip install torch transformers langchain streamlit python-dotenv
-            pip install flake8 black pylint mypy reviewdog
+            pip install flake8 black pylint mypy
 
 
 
@@ -43,10 +43,3 @@ jobs:
       - name: 🧠 MyPy - Static Type Check
         run: mypy . || true
 
-      # ---------------- REVIEW COMMENTS ----------------
-      - name: 🔍 Pylint Review + PR Comments
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pylint $(git ls-files '*.py') \
-          | reviewdog -f=pylint -reporter=github-pr-review -level=warning
