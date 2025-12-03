@@ -30,7 +30,6 @@ jobs:
             pip install flake8 black pylint mypy
 
 
-
       # ---------------- LINTING ----------------
       - name: 🧹 Flake8 - Code Style
         run: flake8 . --max-line-length=120 --statistics || true
@@ -42,3 +41,11 @@ jobs:
       # ---------------- TYPE CHECKING ----------------
       - name: 🧠 MyPy - Static Type Check
         run: mypy . || true
+
+      # ---------------- REVIEW COMMENTS ----------------
+      - name: 🔍 Pylint Review + PR Comments
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pylint $(git ls-files '*.py') \
+          | reviewdog -f=pylint -reporter=github-pr-review -level=warning
